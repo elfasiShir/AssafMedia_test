@@ -239,6 +239,15 @@ var proccessMsgsArr = function (msgs) {
       $msgContent += '<img src="' + $msg["msg_body"] + '" />';
     }
 
+    if ($msgType == "pdf") {
+      $msgContent = "";
+      var fileName = $msg["msg_body"].split("/").pop(); // Extract the file name from the path
+      $msgContent +=
+        '<a href="' +
+        $msg["msg_body"] +
+        '" target="_blank" class="pdf-link">Download PDF (' + fileName + ')</a>';
+    }
+
     if ($msgType == "e2e_notification") {
       continue;
     }
@@ -615,9 +624,13 @@ var sendTxtMsg = async function (
   var msgType = "text"; // Default message type
   var fileExtension = $msg.split(".").pop().toLowerCase();
   var imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp"]; // Common image extensions
+  var pdfExtensions = ["pdf"];
 
   if (imageExtensions.includes(fileExtension)) {
     msgType = "image";
+    $msg = "./uploaded_files/" + $msg; // Ensure the full path is saved in the database
+  } else if (pdfExtensions.includes(fileExtension)) {
+    msgType = "pdf";
     $msg = "./uploaded_files/" + $msg; // Ensure the full path is saved in the database
   }
 
@@ -900,11 +913,11 @@ $(document).ready(function () {
     var dropzone = new Dropzone("#dropzone-area", {
       url: "./api.php?data=upload_image",
       maxFiles: 1,
-      acceptedFiles: "image/*",
+      acceptedFiles: "image/*,.pdf", // Allow images and PDFs
       success: function (file, response) {
-        var imageName = response.imageName;
+        var fileName = response.imageName; // Handle both image and PDF file names
         $("#msg")
-          .val(imageName)
+          .val(fileName)
           .prop("disabled", true)
           .css("background-color", "#e0e0e0");
         $("#dropzone-area").hide();

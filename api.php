@@ -264,8 +264,10 @@ switch ($data) {
 		#region upload_image
 		if (!empty($_FILES['file']['name'])) {
 			$targetDir = "uploaded_files/";
-			$uuid = uniqid();
-			$fileName = $uuid . "_" . basename($_FILES['file']['name']);
+			$uuid = uniqid(); // Generate a unique ID
+			$fileExtension = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION); // Get the file extension
+			$originalName = pathinfo($_FILES['file']['name'], PATHINFO_FILENAME); // Get the original file name (without extension)
+			$fileName = $originalName . "_" . $uuid . "." . $fileExtension; // Combine original name, UUID, and extension
 			$targetFilePath = $targetDir . $fileName;
 
 			if (move_uploaded_file($_FILES['file']['tmp_name'], $targetFilePath)) {
