@@ -639,9 +639,14 @@ video{
 	width: unset !important;
 }
 
-.loading-spinner {
-  text-align: center;
-  font-size: 14px;
-  color: #555;
-  margin: 10px 0;
+/* Style for Dropzone area */
+#dropzone-area {
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#dropzone-area:hover {
+  background-color: #e0e0e0;
 }

@@ -86,6 +86,12 @@
 					<i class="fa-solid fa-paper-plane"></i>
 				</button>
 			</form>
+
+			<!-- Add Dropzone area and file input for uploads -->
+			<div id="dropzone-area" style="display: none; border: 2px dashed #ccc; padding: 20px; text-align: center;">
+				Drag and drop an image here or click to upload.
+			</div>
+			<input id="file-input" type="file" accept="image/*" style="display: none;" />
 		</div>
 	</div>
 
@@ -94,6 +100,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.4/jquery-confirm.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/plyr/3.7.8/plyr.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
 
 	<script src="./assets/js/main.js?v=<?php echo time(); ?>"></script>
 

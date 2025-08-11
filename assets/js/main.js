@@ -884,6 +884,105 @@ var enableMsgsUpdateInterval = function () {
 $(document).ready(function () {
   consoleLog("document ready", { level: 0 });
 
+  // Initialize Dropzone for desktop
+  if (!/Mobi|Android/i.test(navigator.userAgent)) {
+    var dropzone = new Dropzone("#dropzone-area", {
+      url: "./api.php?data=upload_image",
+      maxFiles: 1,
+      acceptedFiles: "image/*",
+      success: function (file, response) {
+        var imageName = response.imageName;
+        $("#msg")
+          .val(imageName)
+          .prop("disabled", true)
+          .css("background-color", "#e0e0e0");
+        $("#dropzone-area").hide();
+      },
+    });
+  }
+
+  // Handle paperclip click for mobile and desktop
+  $(".fa-paperclip").on("click", function () {
+    if (/Mobi|Android/i.test(navigator.userAgent)) {
+      $("#file-input").click();
+    } else {
+      $("#dropzone-area").toggle();
+
+      // Scroll to the bottom of the chat window
+      var chatWindow = $("#chat_window");
+      chatWindow.scrollTop(chatWindow.prop("scrollHeight"));
+    }
+  });
+
+  // Handle file input for mobile
+  $("#file-input").on("change", function (event) {
+    var file = event.target.files[0];
+    if (file) {
+      // Ensure only one file is uploaded
+      if ($("#msg").val()) {
+        alert("You can only upload one file at a time.");
+        return;
+      }
+
+      var formData = new FormData();
+      formData.append("file", file);
+
+      $.ajax({
+        url: "./api.php?data=upload_image",
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+          var imageName = response.imageName;
+          $("#msg")
+            .val(imageName)
+            .prop("disabled", true)
+            .css("background-color", "#e0e0e0");
+        },
+      });
+    }
+  });
+  // Handle message sending
+  $("#send_msg").on("submit", function (e) {
+    e.preventDefault();
+
+    var $form = $(this);
+    var msg = $form.find("#msg").val();
+    var msgType = "text"; // Default message type
+
+    // Check if the message is an image based on file extension
+    if (msg) {
+      var fileExtension = msg.split(".").pop().toLowerCase();
+      var imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp"]; // Common image extensions
+
+      if (imageExtensions.includes(fileExtension)) {
+        msgType = "image";
+        msg = "./uploaded_files/" + msg; // Ensure the full path is saved in the database
+      }
+    }
+
+    $.ajax({
+      url: "./api.php?data=send_wa_txt_msg",
+      type: "POST",
+      data: {
+        msg: msg,
+        msg_type: msgType, // Pass the message type
+        contact_id: $.globals.contactId,
+        username: $.globals.username,
+      },
+      success: function (response) {
+        if (response.success) {
+          $form.trigger("reset");
+          $("#msg").prop("disabled", false).css("background-color", "");
+          $("#dropzone-area").hide();
+        } else {
+          alert("Failed to send message.");
+        }
+      },
+    });
+  });
+
   // Lazy loading for older messages
   $("#msgs").on("scroll", function () {
     var $this = $(this);

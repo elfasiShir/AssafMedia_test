@@ -185,6 +185,7 @@ switch ($data) {
 		#region send_wa_txt_msg
 
 		$msg = $_POST["msg"] ?? null;
+		$msgType = $_POST["msg_type"] ?? "text";
 		$contact_id = $_POST["contact_id"] ?? null;
 		$username = $_POST["username"] ?? null;
 
@@ -196,6 +197,12 @@ switch ($data) {
 
 		if (!$username) {
 			error_log("ERROR 35408437590347698007689068997689867866");
+			echo json_encode(false);
+			die();
+		}
+
+		if (!$msgType) {
+			error_log("ERROR message type is not set, ok?");
 			echo json_encode(false);
 			die();
 		}
@@ -230,7 +237,7 @@ switch ($data) {
 			"belongs_to_username" => $username,
 			"contact_id" => $contact_id,
 			"is_from_me" => 1,
-			"msg_type" => "text",
+			"msg_type" => $msgType,
 			"msg_body" => $msg,
 		]);
 
@@ -238,7 +245,7 @@ switch ($data) {
 			"belongs_to_username" => $des_username,
 			"contact_id" => $my_contact_id,
 			"is_from_me" => 0,
-			"msg_type" => "text",
+			"msg_type" => $msgType,
 			"msg_body" => $msg,
 		]);
 
@@ -250,6 +257,27 @@ switch ($data) {
 		echo json_encode(false);
 
 		#endregion send_wa_txt_msg
+		break;
+
+
+	case "upload_image":
+		#region upload_image
+		if (!empty($_FILES['file']['name'])) {
+			$targetDir = "uploaded_files/";
+			$uuid = uniqid();
+			$fileName = $uuid . "_" . basename($_FILES['file']['name']);
+			$targetFilePath = $targetDir . $fileName;
+
+			if (move_uploaded_file($_FILES['file']['tmp_name'], $targetFilePath)) {
+				echo json_encode(["success" => true, "imageName" => $fileName]);
+			} else {
+				echo json_encode(["success" => false, "message" => "File upload failed."]);
+			}
+		} else {
+			echo json_encode(["success" => false, "message" => "No file uploaded."]);
+		}
+		die();
+		#endregion upload_image
 		break;
 }
 
