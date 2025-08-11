@@ -569,7 +569,7 @@ var sendTxtMsg = async function (
 
   if ($.globals.isPendingMsg) {
     consoleLog(
-      "you're trying to call sendTxtMsg while another proccess is running",
+      "you're trying to call sendTxtMsg while another process is running",
       { level: 2, type: "error" }
     );
     return false;
@@ -587,7 +587,7 @@ var sendTxtMsg = async function (
   }
 
   if (!$msg) {
-    consoleLog("you're trying to call sendTxtMsg width empty msg: ", $msg, {
+    consoleLog("you're trying to call sendTxtMsg with an empty msg: ", $msg, {
       level: 5,
       type: "error",
     });
@@ -611,8 +611,19 @@ var sendTxtMsg = async function (
     return false;
   }
 
+  // Determine message type (text or image)
+  var msgType = "text"; // Default message type
+  var fileExtension = $msg.split(".").pop().toLowerCase();
+  var imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp"]; // Common image extensions
+
+  if (imageExtensions.includes(fileExtension)) {
+    msgType = "image";
+    $msg = "./uploaded_files/" + $msg; // Ensure the full path is saved in the database
+  }
+
   var postData = {
     msg: $msg,
+    msg_type: msgType, // Pass the message type
     username: $username,
     contact_id: $contactId,
     time: $time,
@@ -942,45 +953,6 @@ $(document).ready(function () {
         },
       });
     }
-  });
-  // Handle message sending
-  $("#send_msg").on("submit", function (e) {
-    e.preventDefault();
-
-    var $form = $(this);
-    var msg = $form.find("#msg").val();
-    var msgType = "text"; // Default message type
-
-    // Check if the message is an image based on file extension
-    if (msg) {
-      var fileExtension = msg.split(".").pop().toLowerCase();
-      var imageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp"]; // Common image extensions
-
-      if (imageExtensions.includes(fileExtension)) {
-        msgType = "image";
-        msg = "./uploaded_files/" + msg; // Ensure the full path is saved in the database
-      }
-    }
-
-    $.ajax({
-      url: "./api.php?data=send_wa_txt_msg",
-      type: "POST",
-      data: {
-        msg: msg,
-        msg_type: msgType, // Pass the message type
-        contact_id: $.globals.contactId,
-        username: $.globals.username,
-      },
-      success: function (response) {
-        if (response.success) {
-          $form.trigger("reset");
-          $("#msg").prop("disabled", false).css("background-color", "");
-          $("#dropzone-area").hide();
-        } else {
-          alert("Failed to send message.");
-        }
-      },
-    });
   });
 
   // Lazy loading for older messages
