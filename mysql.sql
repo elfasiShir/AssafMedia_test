@@ -1,5 +1,8 @@
 /*!40101 SET NAMES utf8mb4 */;
 
+CREATE DATABASE assaf_media_test;
+USE assaf_media_test;
+
 CREATE TABLE `config` (
   `id` int(11) NOT NULL,
   `setting` varchar(255) NOT NULL,
@@ -671,3 +674,14 @@ ALTER TABLE `messages`
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=115;
 COMMIT;
+
+
+ALTER TABLE `assaf_media_test`.`users` 
+ADD COLUMN `email` VARCHAR(45) NULL DEFAULT NULL AFTER `creation_datetime`,
+ADD UNIQUE INDEX `username_UNIQUE` (`username` ASC) VISIBLE,
+ADD UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE;
+;
+
+ALTER TABLE `assaf_media_test`.`users` 
+ADD COLUMN `otp` VARCHAR(45) NULL DEFAULT NULL AFTER `email`,
+ADD COLUMN `otp_createdate` VARCHAR(45) NULL DEFAULT NULL AFTER `otp`;
