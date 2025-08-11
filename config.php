@@ -81,6 +81,13 @@ try {
 include_all_modules();
 include_all_plugins();
 
+if (!function_exists("get_now")) {
+	function get_now()
+	{
+		return date("Y-m-d H:i:s");
+	}
+}
+
 if (function_exists("get_now")) {
 	$globals["app_loaded_datetime"] = get_now();
 }
