@@ -13,7 +13,7 @@ $.settings = {
     "https://sounddino.com//mp3/5/single-sound-message-icq-ooh.mp3",
   api_full_url: "./api.php?data=",
   defaultChatsLoadingLimiting: 6,
-  defaultMsgsLoadingLimiting: 6,
+  defaultMsgsLoadingLimiting: 9,
   defaultProfilePicture: "./profile_pics/unknown.jpg",
 
   popupDefaultOptions: {
@@ -308,7 +308,21 @@ var loadMsgsFromServerByContactId = async function (
 ) {
   consoleLog("loadMsgsFromServerByContactId fired!");
 
+  // Prevent multiple requests during cooldown
+  if ($.globals.isLoadingMsgs) {
+    consoleLog("Cooldown active, skipping request...", { level: 1 });
+    return;
+  }
+
   $.globals.isLoadingMsgs = 1;
+
+  // Add loading animation
+  var loadingHtml =
+    '<div id="loading_animation" class="loading-spinner"> Loading...</div>';
+  if (!$("#msgs").find("#loading_animation").length) {
+    $("#msgs").prepend(loadingHtml);
+  }
+
   var $contactId = $contactId ?? $.globals.contactId;
   var $username = $.globals.username;
 
@@ -322,7 +336,7 @@ var loadMsgsFromServerByContactId = async function (
     var $limit = $limit ?? $.settings.defaultMsgsLoadingLimiting;
   }
 
-  var loadTriggerHtml = '<div id="load_trigger">🔄</div>';
+  var loadTriggerHtml = '<div id="load_trigger">Loading ... </div>';
   var firstMsgId = $("#msgs").find(".message-box").first().attr("id");
 
   postToServer({
@@ -335,11 +349,14 @@ var loadMsgsFromServerByContactId = async function (
     successCallback: function (data) {
       if (!data || data.length == 0) {
         if (!$clearChatIfEmpty) {
-          consoleLog(
-            "loadMsgsFromServerByContactId returned empty string. That could be because there's no other msgs to load. data: ",
-            data,
-            { level: 3, type: "warn" }
-          );
+          consoleLog("no new msgs", { level: 0 });
+
+          // Replace load_trigger with "Conversation started here"
+          $("#msgs")
+            .find("#load_trigger")
+            .replaceWith(
+              '<div class="conversation-started">Conversation started here</div>'
+            );
           return false;
         }
 
@@ -404,10 +421,23 @@ var loadMsgsFromServerByContactId = async function (
           consoleLog(e, { level: 5, type: "error" });
         }
       }
+
+      // Check if the scroll bar is full and trigger loading more messages
+      if (d.prop("scrollHeight") <= d.prop("clientHeight") && $prepend) {
+        consoleLog("Scroll bar full, loading more messages...", { level: 0 });
+        loadMsgsFromServerByContactId(true);
+      }
     },
     onAnywayCallback: function () {
+      // Remove loading animation
+      $("#msgs").find("#loading_animation").remove();
+
+      // Cooldown of 2 seconds
+      setTimeout(() => {
+        $.globals.isLoadingMsgs = 0;
+      }, 1000);
+
       getLastMsgId();
-      $.globals.isLoadingMsgs = 0;
     },
   });
 };
@@ -700,12 +730,23 @@ var goToChat = async function ($contactId) {
   $.globals.contactId = $contactId;
 
   $("#chat_window").addClass("visable");
-  loadMsgsFromServerByContactId(
+
+  // Load initial messages
+  await loadMsgsFromServerByContactId(
     false,
     $contactId,
     $.settings.defaultMsgsLoadingLimiting,
     1
   );
+
+  // Check if the scroll bar is full and trigger loading more messages
+  var d = $("#msgs");
+  if (d.prop("scrollHeight") <= d.prop("clientHeight")) {
+    consoleLog("Initial scroll bar full, loading more messages...", {
+      level: 0,
+    });
+    loadMsgsFromServerByContactId(true);
+  }
 };
 
 var getLastMsgId = function () {
@@ -842,6 +883,19 @@ var enableMsgsUpdateInterval = function () {
 
 $(document).ready(function () {
   consoleLog("document ready", { level: 0 });
+
+  // Lazy loading for older messages
+  $("#msgs").on("scroll", function () {
+    var $this = $(this);
+
+    // Check if the user has scrolled to the top
+    if ($this.scrollTop() <= 10 && !$.globals.isLoadingMsgs) {
+      consoleLog("Scrolled to top, loading older messages...", { level: 0 });
+
+      // Trigger loading older messages
+      loadMsgsFromServerByContactId(true);
+    }
+  });
 });
 
 $(window).on("load", function () {
