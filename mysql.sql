@@ -1,5 +1,8 @@
 /*!40101 SET NAMES utf8mb4 */;
 
+CREATE DATABASE assaf_media_test;
+USE assaf_media_test;
+
 CREATE TABLE `config` (
   `id` int(11) NOT NULL,
   `setting` varchar(255) NOT NULL,
