@@ -685,3 +685,6 @@ ADD UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE;
 ALTER TABLE `assaf_media_test`.`users` 
 ADD COLUMN `otp` VARCHAR(45) NULL DEFAULT NULL AFTER `email`,
 ADD COLUMN `otp_createdate` VARCHAR(45) NULL DEFAULT NULL AFTER `otp`;
+
+ALTER TABLE `assaf_media_test`.`users` 
+ADD COLUMN `otp_tries` INT NULL DEFAULT 0 AFTER `otp_createdate`;
