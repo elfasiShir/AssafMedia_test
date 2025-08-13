@@ -75,6 +75,7 @@ switch ($_GET["data"] ?? null) {
         // Use Brevo (formerly Sendinblue) to send the OTP
         // Load the Brevo API key from the environment
         $brevoApiKey = getenv('BREVO_API_KEY');
+
         if (!$brevoApiKey) {
             error_log("ERROR: Brevo API key is not set in the environment.");
             die("Internal Server Error: Missing API key.");
@@ -130,6 +131,8 @@ switch ($_GET["data"] ?? null) {
         // Check OTP and creation date in the database
         $query = "SELECT `otp`, `otp_createdate` FROM `users` WHERE `email` = ?;";
         $result = mysql_fetch_array($query, [$email]);
+        echo json_encode([$result]);
+        die();
 
         if (!$result) {
             error_log("ERROR: Email not found in the database");

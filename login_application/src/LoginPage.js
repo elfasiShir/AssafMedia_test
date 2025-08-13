@@ -11,13 +11,17 @@ const LoginPage = () => {
     console.log("Email submitted:", email);
 
     try {
-      const response = await fetch("http://localhost:8088/api/send_otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await fetch(
+        `http://localhost:8088/login.php/?data=send_otp&email=${encodeURIComponent(
+          email
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         console.log("OTP sent successfully");
@@ -35,17 +39,22 @@ const LoginPage = () => {
     console.log("OTP submitted:", otp);
 
     try {
-      const response = await fetch("http://localhost:8088/api/validate_otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, otp }),
-      });
+      const response = await fetch(
+        `http://localhost:8088/login.php/?data=validate_otp&email=${encodeURIComponent(
+          email
+        )}&otp=${encodeURIComponent(otp)}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
         console.log("OTP validated successfully");
-        // Proceed to the next step or login success
+        // redirect to the dashboard http://localhost:8088/index.php
+        window.location.href = "http://localhost:8088/index.php";
       } else {
         console.error("Failed to validate OTP");
       }
