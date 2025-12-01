@@ -1,10 +1,44 @@
 <?php
+define("a328763fe27bba", "TRUE");
+
+session_start();
+
+require_once("config.php");
+
+// Start the session before any output
+
+header("Content-Type: application/json; charset=utf-8");
+
+// Include the CORS function
+function cors()
+{
+    // Allow from any origin
+    if (isset($_SERVER['HTTP_ORIGIN'])) {
+        header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Max-Age: 86400');    // cache for 1 day
+    }
+
+    // Access-Control headers are received during OPTIONS requests
+    if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+            header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+
+        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+            header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+
+        exit(0);
+    }
+}
+
+// Call the CORS function
+cors();
 
 switch ($_GET["data"] ?? null) {
     case "send_otp":
         #region send_otp
 
-        $email = $_POST["email"] ?? null;
+        $email = $_GET["email"] ?? null;
 
         if (!$email) {
             error_log("ERROR: Email not provided");
@@ -15,8 +49,7 @@ switch ($_GET["data"] ?? null) {
         // Generate a random 6-digit OTP
         $otp = rand(100000, 999999);
 
-        // Save OTP to the database or session (for simplicity, using session here)
-        session_start();
+        // Save OTP to the session
         $_SESSION["otp"] = $otp;
         $_SESSION["otp_createdate"] = time();
         $_SESSION["email"] = $email;
@@ -26,12 +59,14 @@ switch ($_GET["data"] ?? null) {
 
         // Update OTP and creation date in the database
         $otpCreatedate = date('Y-m-d H:i:s');
-        $query = "UPDATE users SET otp = ?, otp_createdate = ? WHERE email = ?";
-        $stmt = $mysqli->prepare($query);
-        $stmt->bind_param('sss', $otp, $otpCreatedate, $email);
-        $stmt->execute();
-
-        if ($stmt->affected_rows === 0) {
+        //$query = "UPDATE users SET otp = ?, otp_createdate = ? WHERE email = ?";
+        $result = mysql_update("users", [
+            "otp" => $otp,
+            "otp_createdate" => $otpCreatedate
+        ], [
+            "email" => $email
+        ]);
+        if (!$result["success"]) {
             error_log("ERROR: Failed to update OTP in the database");
             echo json_encode(["success" => false, "message" => "Failed to update OTP in the database"]);
             die();
@@ -49,7 +84,7 @@ switch ($_GET["data"] ?? null) {
         $url = "https://api.brevo.com/v3/smtp/email";
 
         $data = [
-            "sender" => ["name" => "YourAppName", "email" => "no-reply@yourapp.com"],
+            "sender" => ["name" => "Shir alfassi", "email" => "elfasishir@gmail.com"],
             "to" => [["email" => $email]],
             "subject" => "Your OTP Code",
             "htmlContent" => "<p>Your OTP code is: <strong>$otp</strong></p>"
@@ -81,8 +116,8 @@ switch ($_GET["data"] ?? null) {
     case "validate_otp":
         #region validate_otp
 
-        $email = $_POST["email"] ?? null;
-        $otp = $_POST["otp"] ?? null;
+        $email = $_GET["email"] ?? null;
+        $otp = $_GET["otp"] ?? null;
 
         if (!$email || !$otp) {
             error_log("ERROR: Email or OTP not provided");
@@ -94,37 +129,39 @@ switch ($_GET["data"] ?? null) {
         require_once 'modules/mysql.php';
 
         // Check OTP and creation date in the database
-        $query = "SELECT otp, otp_createdate FROM users WHERE email = ?";
-        $stmt = $mysqli->prepare($query);
-        $stmt->bind_param('s', $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $query = "SELECT `otp`, `otp_createdate` FROM `users` WHERE `email` = ?;";
+        $result = mysql_fetch_array($query, [$email]);
+        echo json_encode([$result]);
+        die();
 
-        if ($result->num_rows === 0) {
+        if (!$result) {
             error_log("ERROR: Email not found in the database");
             echo json_encode(["success" => false, "message" => "Invalid email or OTP"]);
             die();
         }
 
-        $row = $result->fetch_assoc();
-        $storedOtp = $row['otp'];
-        $otpCreatedate = $row['otp_createdate'];
+        $storedOtp = $result[0][0];
+        $storedOtpCreatedate = $result[0][1];
 
-        // Validate OTP
+        $otpCreatedate = strtotime($storedOtpCreatedate);
+        $currentTimestamp = time();
+
+        // validate OTP
         if ($storedOtp !== $otp) {
             error_log("ERROR: Invalid OTP");
             echo json_encode(["success" => false, "message" => "Invalid OTP"]);
             die();
         }
-
-        // Validate OTP expiration (e.g., 5 minutes)
-        $otpTimestamp = strtotime($otpCreatedate);
-        $currentTimestamp = time();
-        if (($currentTimestamp - $otpTimestamp) > 600) {
+        // validate OTP expiration (e.g., 10 minutes)
+        if (($currentTimestamp - $otpCreatedate) > 600) {
             error_log("ERROR: OTP expired");
             echo json_encode(["success" => false, "message" => "OTP expired"]);
             die();
         }
+
+        // Succesful login
+        $_SESSION['user_logged_in'] = true;
+        $_SESSION['email'] = $email;
 
         echo json_encode(["success" => true, "message" => "OTP validated successfully"]);
         die();
